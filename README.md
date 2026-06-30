@@ -136,7 +136,7 @@ Typical performance:
 
 ```
 .
-├── main.py
+├── asl_translator.py
 ├── best.onnx
 ├── hand_landmarker.task
 └── README.md
@@ -162,7 +162,7 @@ pip install pyttsx3
 # ▶ Running the Project
 
 ```bash
-python main.py
+python asl_translator.py
 ```
 
 Make sure the following files are present:
