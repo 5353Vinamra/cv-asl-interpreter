@@ -1,4 +1,3 @@
-```markdown
 # ASL Translator — AMD DirectML Edition v5.0
 
 A highly optimized, dual-threaded computer vision pipeline designed to translate American Sign Language (ASL) fingerspelling into text in real time[cite: 3]. This system isolates heavy machine learning tasks from the user interface, achieving a smooth ~60 FPS display loop alongside a dedicated ~12–15 FPS inference worker[cite: 3].
