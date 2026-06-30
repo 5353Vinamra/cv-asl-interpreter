@@ -1,333 +1,127 @@
-# 🤟 Real-Time ASL (American Sign Language) Translator
+# ASL Translator
 
-A high-performance **real-time American Sign Language (ASL) translator** built with **Python**, **MediaPipe**, **YOLO ONNX**, and **ONNX Runtime DirectML**. The application recognizes static ASL letters, dynamic motion letters, and common hand gestures while converting them into text with optional text-to-speech output.
+A real-time **American Sign Language (ASL) Translator** built with **Python**, **MediaPipe**, and a custom **YOLO ONNX** model. The application recognizes ASL letters, motion-based signs, and common hand gestures in real time, then converts them into text with optional text-to-speech.
 
-Designed for **low latency**, **high accuracy**, and **GPU acceleration on AMD hardware**.
-
----
-
-# ✨ Features
-
-## 🔤 Real-Time ASL Letter Recognition
-- Recognizes ASL alphabet (A–Z)
-- Live webcam inference
-- Confidence-based prediction
-- Automatic spelling correction for completed words
+Designed for fast and accurate recognition using a multi-stage recognition pipeline.
 
 ---
 
-## 🧠 Multi-Stage Recognition Pipeline
+## Features
 
-The translator uses a **3-stage hybrid recognition system** instead of relying on a single neural network.
-
-### Stage 1 — Gesture Recognition
-
-Detects common hand gestures using MediaPipe landmark geometry.
-
-Supported gestures:
-
-- 🤟 I Love You
-- 👍 Thumbs Up
-- 👎 Thumbs Down
-- 🤘 Rock On
-- 🖕 Middle Finger
-- 🖖 Vulcan Salute
-- 🖐 Open Palm
-
-These gestures bypass the neural network for maximum speed and reliability.
+- Real-time ASL alphabet recognition (A–Z)
+- Motion recognition for dynamic letters (J and Z)
+- 3D geometric correction for visually similar letters
+- Recognition of common hand gestures
+- Live confidence display
+- Manual and Auto Commit modes
+- Automatic spelling correction
+- Built-in text-to-speech
+- GPU acceleration through ONNX Runtime DirectML when available
+- Automatic download of the MediaPipe hand landmark model on first launch
 
 ---
 
-### Stage 1.5 — Motion Letter Detection
+## System Requirements
 
-Static images cannot identify certain ASL letters.
+- Windows 10 or Windows 11
+- Python 3.11 or newer
+- Webcam
 
-This project detects motion-based letters using velocity and acceleration analysis.
-
-Supported:
-
-- J
-- Z
-
-Features:
-
-- Velocity tracking
-- Acceleration analysis
-- Curvature detection
-- Motion cooldown
-- Physics-based trajectory recognition
+> **Note:** This project is currently developed and tested for Windows.
 
 ---
 
-### Stage 2 — YOLO ONNX Classifier
+## Installation
 
-The cropped hand image is classified using a YOLO ONNX model.
-
-Features:
-
-- Per-letter confidence thresholds
-- Adaptive ROI confidence
-- Fast ONNX Runtime inference
-- GPU acceleration with DirectML
-
----
-
-### Stage 3 — 3D Geometry Classifier
-
-Several ASL letters have extremely similar hand shapes.
-
-A custom geometry classifier resolves difficult cases using MediaPipe's 3D landmarks.
-
-Examples:
-
-- A vs S vs E
-- M vs N
-- K vs P
-- G vs Q
-- H vs U
-- D vs F
-- X vs 1
-- T
-
-Uses:
-
-- Depth information
-- Thumb position
-- Finger angles
-- Joint coverage
-- 3D geometry analysis
-
----
-
-# 🚀 Performance
-
-Architecture:
-
-- Dual-threaded pipeline
-- Separate UI thread
-- Separate AI worker thread
-
-Typical performance:
-
-| Component | Speed |
-|----------|---------|
-| UI | ~60 FPS |
-| AI Worker | ~12–15 FPS |
-| Webcam | Real-time |
-| Latency | Very Low |
-
----
-
-# 🛠 Technologies Used
-
-- Python
-- OpenCV
-- MediaPipe Tasks
-- ONNX Runtime
-- DirectML
-- YOLO ONNX
-- NumPy
-- Pyttsx3
-- AutoCorrect
-
----
-
-# 📂 Project Structure
-
-```
-.
-├── asl_translator.py
-├── best.onnx
-├── hand_landmarker.task
-└── README.md
-```
-
----
-
-# ⚙ Requirements
-
-Install dependencies:
+### 1. Clone the repository
 
 ```bash
-pip install opencv-python
-pip install mediapipe
-pip install numpy
-pip install onnxruntime-directml
-pip install autocorrect
-pip install pyttsx3
+git clone https://github.com/YourUsername/ASL-Translator.git
+cd ASL-Translator
+```
+
+Or download the repository as a ZIP file and extract it.
+
+---
+
+### 2. Install the required packages
+
+```bash
+pip install -r requirements.txt
 ```
 
 ---
 
-# ▶ Running the Project
+### 3. Run the application
 
 ```bash
 python asl_translator.py
 ```
 
-Make sure the following files are present:
-
-- `best.onnx`
-- `hand_landmarker.task`
+On the first launch, the required MediaPipe hand landmark model will be downloaded automatically.
 
 ---
 
-# ⌨ Controls
+## Controls
 
-| Key | Action |
-|------|--------|
+| Key | Function |
+|------|----------|
 | Space | Commit current letter |
-| Enter | Complete word |
-| Backspace | Delete previous character |
+| Enter | Complete current word |
+| Backspace | Delete last character |
 | A | Toggle Auto Commit |
 | M | Toggle Mirror Mode |
 | S | Toggle Text-to-Speech |
-| G | Open Gesture Guide |
-| C | Clear Current Word |
-| ESC | Clear Entire Sentence |
-| Q | Quit |
+| G | Show Gesture Guide |
+| C | Clear current word |
+| Esc | Clear all text |
+| Q | Quit application |
 
 ---
 
-# 🎙 Text-to-Speech
+## Project Structure
 
-The translator includes an asynchronous text-to-speech system.
-
-Features:
-
-- Thread-safe speech engine
-- Queue-based architecture
-- Speaks completed words
-- Adjustable speech rate
-- Mute toggle
-
----
-
-# 📊 Recognition Improvements
-
-This version introduces several accuracy improvements:
-
-### ✅ Per-Letter Confidence Thresholds
-
-Instead of using one confidence threshold for every letter, each ASL letter has its own optimized threshold.
-
-Benefits:
-
-- Better precision
-- Fewer false positives
-- Improved difficult-letter recognition
+```
+ASL-Translator/
+│
+├── asl_translator.py
+├── best.onnx
+├── requirements.txt
+├── README.md
+└── .gitignore
+```
 
 ---
 
-### ✅ 3D Fist Cluster Resolver
+## Recognition Pipeline
 
-Accurately separates:
+The translator uses a multi-stage recognition system for improved accuracy.
 
-- A
-- S
-- E
-- M
-- N
-- T
+- **Stage 1:** Geometry-based gesture recognition
+- **Stage 2:** Motion detection for dynamic letters (J and Z)
+- **Stage 3:** YOLO ONNX letter classification
+- **Stage 4:** 3D geometric verification for visually similar letters
 
-using:
-
-- Thumb angle
-- Thumb depth
-- Finger coverage
-- 3D landmark geometry
+This combination improves recognition accuracy while maintaining real-time performance.
 
 ---
 
-### ✅ Motion Recognition
+## Technologies Used
 
-Dynamic letters are detected using:
-
-- Velocity
-- Acceleration
-- Curvature
-- Direction changes
-
-instead of simple coordinate tracking.
-
----
-
-# 🎯 Applications
-
-- Sign language translation
-- Accessibility tools
-- Human-computer interaction
-- Educational projects
-- Computer vision research
-- AI demonstrations
-
----
-
-# 📸 User Interface
-
-The application displays:
-
-- Live webcam feed
-- Bounding boxes
-- Prediction confidence
-- Recognition stage
-- FPS
-- Current sentence
-- Gesture labels
-- Recognition history
-- Auto-commit indicator
-
----
-
-# 💻 Hardware
-
-Optimized for:
-
-- AMD GPUs (DirectML)
-- Integrated GPUs
-- Windows PCs
-
-Falls back to CPU execution if GPU acceleration is unavailable.
-
----
-
-# 🔮 Future Improvements
-
-- Word prediction
-- Sentence-level language model
-- Multi-hand recognition
-- Continuous sentence recognition
-- Additional ASL gestures
-- Model training improvements
-- Cross-platform support
-- Mobile deployment
-
----
-
-# 🤝 Contributing
-
-Contributions, bug reports, and feature requests are welcome.
-
-Feel free to fork the repository and submit a pull request.
-
----
-
-# 📄 License
-
-This project is intended for educational and research purposes.
-
-Choose an appropriate open-source license before public distribution.
-
----
-
-# ⭐ Acknowledgements
-
-- Google MediaPipe
-- ONNX Runtime
+- Python
 - OpenCV
+- MediaPipe
+- ONNX Runtime DirectML
 - NumPy
-- Python Community
+- pyttsx3
+- AutoCorrect
 
 ---
 
-## If you found this project useful, consider giving it a ⭐ on GitHub!
+## License
+
+This project is licensed under the MIT License.
+
+---
+
+If you find this project useful, consider giving it a ⭐ on GitHub.
