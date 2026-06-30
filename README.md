@@ -1,122 +1,333 @@
-# ASL Translator — AMD DirectML Edition v5.0
+# 🤟 Real-Time ASL (American Sign Language) Translator
 
-A highly optimized, dual-threaded computer vision pipeline designed to translate American Sign Language (ASL) fingerspelling into text in real time[cite: 3]. This system isolates heavy machine learning tasks from the user interface, achieving a smooth ~60 FPS display loop alongside a dedicated ~12–15 FPS inference worker[cite: 3].
+A high-performance **real-time American Sign Language (ASL) translator** built with **Python**, **MediaPipe**, **YOLO ONNX**, and **ONNX Runtime DirectML**. The application recognizes static ASL letters, dynamic motion letters, and common hand gestures while converting them into text with optional text-to-speech output.
 
-It is highly optimized for hardware acceleration using ONNX Runtime with the DirectML Execution Provider (specifically tuned for AMD hardware like the Radeon 760M, with automatic CPU fallback)[cite: 3].
-
----
-
-## 🧠 Core Architecture & Pipeline
-
-The translator processes incoming video frames through a sophisticated three-stage verification pipeline to ensure maximum accuracy and eliminate common spatial errors[cite: 3]:
-
-### Stage 1: Gesture Recogniser (Highest Priority)
-Evaluates pure landmark geometry to detect 7 universal conflict-free gestures[cite: 3].
-*   Detects common phrases like Thumbs Up/Down, I Love You (ILY), Vulcan Salute, Rock On, and Open Palm[cite: 3].
-*   If a confident match is found, the system skips subsequent AI stages for that frame, saving significant GPU cycles and preventing YOLO misclassifications[cite: 3].
-
-### Stage 1.5: Motion Letter Detector (J & Z)
-Replaces basic coordinate-delta checks with a physics-based velocity and acceleration model[cite: 3].
-*   **'J' Detection:** Tracks the pinky tip, looking for an initial downward velocity followed by a leftward hook[cite: 3]. Path curvature is verified via cross-product sign consistency[cite: 3].
-*   **'Z' Detection:** Tracks the index tip, looking for a 3-phase velocity profile (+vx → -vx,+vy → +vx) with peak X-acceleration to confirm sharp corners[cite: 3]. 
-*   Includes a 10-frame cooldown window to prevent double-firing[cite: 3].
-
-### Stage 2: YOLO ONNX Core
-When no static gesture or motion is detected, the system extracts the hand Region of Interest (ROI) and runs it through a YOLO object detection model (`best.onnx`)[cite: 3, 4].
-*   **Per-Letter Confidence Thresholds:** Replaces a single adaptive threshold with a dynamic, vectorized NumPy array[cite: 3]. 
-*   Hard letters (Q, R, U, X, T) have a lowered threshold to force them into Stage 3 for geometric verification[cite: 3].
-*   Easy letters (B, L, V, Y) have a raised threshold to suppress false positives[cite: 3].
-
-### Stage 3: 3D Geo Classifier
-Bypasses traditional 2D bounding box limitations by evaluating MediaPipe's 3D `.z` depth coordinates (where negative values are closer to the camera)[cite: 3].
-*   **Fist-Cluster 3D Resolver:** Distinguishes between A, S, E, M, N, and T[cite: 3].
-*   Calculates the 3D angle of the thumb and checks the signed Z-delta (e.g., if the thumb is in front of or behind the finger PIP joints)[cite: 3].
-*   Resolves depth-aware confusion pairs (e.g., K vs P, G vs Q, H vs U)[cite: 3].
+Designed for **low latency**, **high accuracy**, and **GPU acceleration on AMD hardware**.
 
 ---
 
-## 🗣️ Text-to-Speech (TTS) Engine
+# ✨ Features
 
-Includes a dedicated daemon thread running a `pyttsx3` engine (Windows SAPI5)[cite: 3].
-*   Operates on a non-blocking queue (max size of 6 utterances) that silently drops stale words to prevent latency[cite: 3].
-*   Engine state is safely managed across threads, allowing on-the-fly muting and dynamic stopping/flushing of the TTS queue[cite: 3].
-
----
-
-## 📁 Repository Structure
-
-*   `main.py`: The core application containing the multithreaded UI, OpenCV loop, MediaPipe landmark extraction, and ONNX inference logic[cite: 3].
-*   `best.onnx`: The exported YOLO model weights used for ASL character classification[cite: 3, 4]. *(Note: If this file is over 50MB, it may need to be downloaded separately depending on Git LFS limits).*
-*   `hand_landmarker.task`: The MediaPipe task file[cite: 2, 3]. If missing from the directory, `main.py` will automatically download this file at startup[cite: 3].
-
-*(Note: PyTorch checkpoints like `best.pt` and cache files like `main.cpython-313.pyc` are excluded from this repository to maintain a lightweight production environment)[cite: 1, 5].*
+## 🔤 Real-Time ASL Letter Recognition
+- Recognizes ASL alphabet (A–Z)
+- Live webcam inference
+- Confidence-based prediction
+- Automatic spelling correction for completed words
 
 ---
 
-## ⚙️ Installation & Setup
+## 🧠 Multi-Stage Recognition Pipeline
 
-**1. Prerequisites**
-Ensure you have **Python 3.13** (or a compatible 3.x version) installed[cite: 3].
+The translator uses a **3-stage hybrid recognition system** instead of relying on a single neural network.
 
-**2. Clone the Repository**
-```bash
-git clone [https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git](https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git)
-cd YOUR_REPO_NAME
+### Stage 1 — Gesture Recognition
+
+Detects common hand gestures using MediaPipe landmark geometry.
+
+Supported gestures:
+
+- 🤟 I Love You
+- 👍 Thumbs Up
+- 👎 Thumbs Down
+- 🤘 Rock On
+- 🖕 Middle Finger
+- 🖖 Vulcan Salute
+- 🖐 Open Palm
+
+These gestures bypass the neural network for maximum speed and reliability.
+
+---
+
+### Stage 1.5 — Motion Letter Detection
+
+Static images cannot identify certain ASL letters.
+
+This project detects motion-based letters using velocity and acceleration analysis.
+
+Supported:
+
+- J
+- Z
+
+Features:
+
+- Velocity tracking
+- Acceleration analysis
+- Curvature detection
+- Motion cooldown
+- Physics-based trajectory recognition
+
+---
+
+### Stage 2 — YOLO ONNX Classifier
+
+The cropped hand image is classified using a YOLO ONNX model.
+
+Features:
+
+- Per-letter confidence thresholds
+- Adaptive ROI confidence
+- Fast ONNX Runtime inference
+- GPU acceleration with DirectML
+
+---
+
+### Stage 3 — 3D Geometry Classifier
+
+Several ASL letters have extremely similar hand shapes.
+
+A custom geometry classifier resolves difficult cases using MediaPipe's 3D landmarks.
+
+Examples:
+
+- A vs S vs E
+- M vs N
+- K vs P
+- G vs Q
+- H vs U
+- D vs F
+- X vs 1
+- T
+
+Uses:
+
+- Depth information
+- Thumb position
+- Finger angles
+- Joint coverage
+- 3D geometry analysis
+
+---
+
+# 🚀 Performance
+
+Architecture:
+
+- Dual-threaded pipeline
+- Separate UI thread
+- Separate AI worker thread
+
+Typical performance:
+
+| Component | Speed |
+|----------|---------|
+| UI | ~60 FPS |
+| AI Worker | ~12–15 FPS |
+| Webcam | Real-time |
+| Latency | Very Low |
+
+---
+
+# 🛠 Technologies Used
+
+- Python
+- OpenCV
+- MediaPipe Tasks
+- ONNX Runtime
+- DirectML
+- YOLO ONNX
+- NumPy
+- Pyttsx3
+- AutoCorrect
+
+---
+
+# 📂 Project Structure
 
 ```
-
-**3. Install Dependencies**
-Install the required libraries using pip:
-
-```bash
-pip install opencv-python numpy mediapipe onnxruntime-directml autocorrect pyttsx3
-
+.
+├── main.py
+├── best.onnx
+├── hand_landmarker.task
+└── README.md
 ```
 
-Note: If you do not have an AMD/DirectML compatible GPU, the system will automatically fall back to the `CPUExecutionProvider`.
+---
 
-**4. Run the Application**
+# ⚙ Requirements
+
+Install dependencies:
+
+```bash
+pip install opencv-python
+pip install mediapipe
+pip install numpy
+pip install onnxruntime-directml
+pip install autocorrect
+pip install pyttsx3
+```
+
+---
+
+# ▶ Running the Project
 
 ```bash
 python main.py
-
 ```
+
+Make sure the following files are present:
+
+- `best.onnx`
+- `hand_landmarker.task`
 
 ---
 
-## 🎮 Controls
+# ⌨ Controls
 
-* **SPACE**: Manual commit (locks in the current letter without TTS)
+| Key | Action |
+|------|--------|
+| Space | Commit current letter |
+| Enter | Complete word |
+| Backspace | Delete previous character |
+| A | Toggle Auto Commit |
+| M | Toggle Mirror Mode |
+| S | Toggle Text-to-Speech |
+| G | Open Gesture Guide |
+| C | Clear Current Word |
+| ESC | Clear Entire Sentence |
+| Q | Quit |
 
+---
 
-* **ENTER**: Finish word (pushes the word through autocorrect and triggers Text-to-Speech)
+# 🎙 Text-to-Speech
 
+The translator includes an asynchronous text-to-speech system.
 
-* **BACKSPACE**: Delete the last character or restore the previous word
+Features:
 
+- Thread-safe speech engine
+- Queue-based architecture
+- Speaks completed words
+- Adjustable speech rate
+- Mute toggle
 
-* **A**: Toggle Auto-Commit mode (1.5-second hold)
+---
 
+# 📊 Recognition Improvements
 
-* **M**: Toggle mirror/flip webcam
+This version introduces several accuracy improvements:
 
+### ✅ Per-Letter Confidence Thresholds
 
-* **S**: Toggle Text-to-Speech mute
+Instead of using one confidence threshold for every letter, each ASL letter has its own optimized threshold.
 
+Benefits:
 
-* **C**: Clear the current word
+- Better precision
+- Fewer false positives
+- Improved difficult-letter recognition
 
+---
 
-* **ESC**: Clear all text strings
+### ✅ 3D Fist Cluster Resolver
 
+Accurately separates:
 
-* **G**: Show/Hide the Gesture + Accuracy Guide on-screen
+- A
+- S
+- E
+- M
+- N
+- T
 
+using:
 
-* **Q**: Quit application gracefully
+- Thumb angle
+- Thumb depth
+- Finger coverage
+- 3D landmark geometry
 
+---
 
+### ✅ Motion Recognition
 
-```
+Dynamic letters are detected using:
 
-```
+- Velocity
+- Acceleration
+- Curvature
+- Direction changes
+
+instead of simple coordinate tracking.
+
+---
+
+# 🎯 Applications
+
+- Sign language translation
+- Accessibility tools
+- Human-computer interaction
+- Educational projects
+- Computer vision research
+- AI demonstrations
+
+---
+
+# 📸 User Interface
+
+The application displays:
+
+- Live webcam feed
+- Bounding boxes
+- Prediction confidence
+- Recognition stage
+- FPS
+- Current sentence
+- Gesture labels
+- Recognition history
+- Auto-commit indicator
+
+---
+
+# 💻 Hardware
+
+Optimized for:
+
+- AMD GPUs (DirectML)
+- Integrated GPUs
+- Windows PCs
+
+Falls back to CPU execution if GPU acceleration is unavailable.
+
+---
+
+# 🔮 Future Improvements
+
+- Word prediction
+- Sentence-level language model
+- Multi-hand recognition
+- Continuous sentence recognition
+- Additional ASL gestures
+- Model training improvements
+- Cross-platform support
+- Mobile deployment
+
+---
+
+# 🤝 Contributing
+
+Contributions, bug reports, and feature requests are welcome.
+
+Feel free to fork the repository and submit a pull request.
+
+---
+
+# 📄 License
+
+This project is intended for educational and research purposes.
+
+Choose an appropriate open-source license before public distribution.
+
+---
+
+# ⭐ Acknowledgements
+
+- Google MediaPipe
+- ONNX Runtime
+- OpenCV
+- NumPy
+- Python Community
+
+---
+
+## If you found this project useful, consider giving it a ⭐ on GitHub!
